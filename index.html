@@ -23,21 +23,29 @@
     </header>
 
     <main>
-        <div class="col-12 col-md-6 col-xl-4 mb-4">
-            <div class="card">
-                <h4 class="card-header" >Stock Name: <span id="stock-name"></span></h2>
-                <ul class= price-data id="price-data">
-                    <h5 class="price-info">Price Info</h5>
-                </ul>
-                <ul class="volume-data" id="volume-data">
-                    <h5 class="volume-info">Volume Info</h5>
-                </ul>
-                <ul class="other-data" id="other-data">
-                    <h5 class="other-info">Other Info</h5>
-                </ul>
+        <div class="card-group">
+            <div class="col-12 col-md-4 col-xl-4 mb-3">
+                <div class="card">
+                    <h4 class="card-header" >Stock Name: <span id="stock-name"></span>                  
+                    </h4>
+                    <p class='sector'><span id="sector"></span></p>
+                    <ul class= price-data id="price-data">
+                    </ul>
+                    <ul class="volume-data" id="volume-data">
+                    </ul>
+                    <ul class="other-data" id="other-data">
+                    </ul>
+                    <ul class="past-data" id="past-data">
+                    </ul>
+                </div>
+            </div>
+            <div class="col-12 col-md-12 col-xl-6 mb-6">
+                <div class="card">
+                    <h4 class='chart-title'>Simple Moving Average</h4>
+                    <div id="chartDiv" style="width:95%; height:500px; margin:0 auto;"></div>
+                </div>
             </div>
         </div>
-
         
     </main>
 
@@ -47,6 +55,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.15.0/umd/popper.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://code.jscharting.com/2.9.0/jscharting.js"></script>
     <script src="assets/script.js"></script>
 </body>
 </html>

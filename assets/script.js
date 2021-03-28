@@ -18,6 +18,7 @@ Purpose is to predict stock movement based on several factors
 let priceData = [];
 let volumeData = [];
 let otherData = [];
+let previousDayData = [];
 
 let tickerFormEl = document.querySelector('#stock-ticker');
 let tickerInput = document.querySelector('#ticker');
@@ -25,6 +26,10 @@ let tickerInput = document.querySelector('#ticker');
 let priceDataEl = document.querySelector('#price-data');
 let volumeDataEl = document.querySelector('#volume-data');
 let otherDataEl = document.querySelector('#other-data');
+let pastDataEl = document.querySelector('#past-data');
+
+let cardHeaderEl = document.querySelector('.card-header');
+
 
 let submitButtonHandler = function(event) {
     event.preventDefault();
@@ -32,14 +37,13 @@ let submitButtonHandler = function(event) {
     let stockTicker = tickerInput.value.trim();
 
     if (stockTicker) {
-
-        quoteData(stockTicker);
+        yahooSummaryData(stockTicker);
     }
     
 }
 
 
-let quoteData = function(ticker) {
+let yahooSummaryData = function(ticker) {
     fetch("https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-summary?symbol=" + ticker + "&region=US", {
         "method": "GET",
         "headers": {
@@ -48,11 +52,18 @@ let quoteData = function(ticker) {
         }
     })
     .then(response => {
-        console.log(response);
         if (response.ok) {
             response.json().then(function(data) {
+                // reset html
+                tickerInput.textContent = "";
+                priceDataEl.textContent = "";
+                volumeDataEl.textContent = "";
+                otherDataEl.textContent = "";
+
                 let stockName = data.price.shortName;
                 $('#stock-name').html(stockName);
+                let sectorName = data.summaryProfile.sector;
+                $('#sector').html('Sector: ' + sectorName);
                 // create pricing elements
                 priceData.push({
                     currentAsk: data.financialData.currentPrice.raw,
@@ -63,6 +74,10 @@ let quoteData = function(ticker) {
                     yearHigh: data.summaryDetail.fiftyTwoWeekHigh.raw,
                     yearLow: data.summaryDetail.fiftyTwoWeekLow.raw
                 });
+                // price header
+                let priceHeaderEl = document.createElement('h5');
+                priceHeaderEl.textContent = 'Price Info';
+                priceDataEl.appendChild(priceHeaderEl);
                 // current ask
                 let currentAskEl = document.createElement('li');
                 currentAskEl.textContent = 'Current Ask: ' + priceData[0].currentAsk;
@@ -99,6 +114,10 @@ let quoteData = function(ticker) {
                     tenDayVol: data.summaryDetail.averageDailyVolume10Day.raw,
                     threeMonthVol: data.price.averageDailyVolume3Month.raw
                 });
+                // volume header
+                let volumeHeaderEl = document.createElement('h5');
+                volumeHeaderEl.textContent = 'Volume Info';
+                volumeDataEl.appendChild(volumeHeaderEl);
                 // current volume
                 let currentVolEl = document.createElement('li');
                 currentVolEl.textContent = 'Current Volume: ' + volumeData[0].currentVol
@@ -126,6 +145,10 @@ let quoteData = function(ticker) {
                     shortPreviousMonth: data.defaultKeyStatistics.sharesShortPriorMonth.raw,
                     totalFloat: data.defaultKeyStatistics.floatShares.raw
                 });
+                // other data header
+                let otherHeaderEl = document.createElement('h5');
+                otherHeaderEl.textContent = 'Other Info';
+                otherDataEl.appendChild(otherHeaderEl);
                 // percent insiders
                 let percentInsidersEl = document.createElement('li');
                 percentInsidersEl.textContent = 'Percent Float Held by Insiders: ' + (otherData[0].percentInsiders * 100);
@@ -154,14 +177,107 @@ let quoteData = function(ticker) {
                 let totalFloatEl = document.createElement('li');
                 totalFloatEl.textContent = 'Total Float Shares: ' + otherData[0].totalFloat;
                 otherDataEl.appendChild(totalFloatEl);
-            })
+            });
+            // run alpha function
+            alphaVantageData(ticker);
         }
     })
     .catch(err => {
         console.error(err);
     });
 
-}
+};
+
+// alpha api key: XOL29ZT3Y55LY04P
+
+let alphaVantageData = function(ticker) {
+    fetch("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=" + ticker + "&apikey=XOL29ZT3Y55LY04P")
+    .then(response => {
+        if (response.ok) {
+            // get yesterdays date
+            let yesterdayDate = moment().subtract(1, 'days').format('YYYY-MM-DD');
+
+            response.json().then(function(data) {
+                // past data header
+                let pastHeaderEl = document.createElement('h5');
+                pastHeaderEl.textContent = 'Past Data';
+                pastDataEl.appendChild(pastHeaderEl);
+                let dailyData = data['Time Series (Daily)'];
+                let previousDayEl = dailyData[yesterdayDate];
+                // push to array
+                previousDayData.push({
+                    yesterdayOpen: previousDayEl['1. open'],
+                    yesterdayClose: previousDayEl['4. close'],
+                    yesterdayVol: previousDayEl['5. volume']
+                });
+                // append items to list
+                let yesterdayVolEl = document.createElement('li');
+                yesterdayVolEl.textContent = "Yesterday's volume: " + previousDayData[0].yesterdayVol;
+                pastDataEl.appendChild(yesterdayVolEl);
+
+                let yesterdayOpenEl = document.createElement('li');
+                yesterdayOpenEl.textContent = "Yesterday's Opening Price: " + previousDayData[0].yesterdayOpen;
+                pastDataEl.appendChild(yesterdayOpenEl);
+
+                let yesterdayCloseEl = document.createElement('li');
+                yesterdayCloseEl.textContent = "Yesterday's Closing Price: " + previousDayData[0].yesterdayClose;
+                pastDataEl.appendChild(yesterdayCloseEl);
+
+                /*
+                ************** NEXT ADDITIONS *****************
+                Volume at current time yesterday
+                Data from a week ago
+                Data from a month ago
+                Compare performance to sector performance
+                Create technical indicator charts
+                */
+            });
+            // run the techindicator function
+            // initial chart selections
+            let techIndicator = 'SMA';
+            let interval = 'weekly';
+            let timePeriod = '5';
+            technicalIndicators(ticker, techIndicator, interval, timePeriod);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+    });
+
+};
+
+// gather data for the chart 
+const technicalIndicators = function(ticker, techIndicator, interval, timePeriod) {
+    
+    fetch("https://www.alphavantage.co/query?function=" + techIndicator + "&symbol=" + ticker + 
+        "&interval=" + interval + "&time_period=" + timePeriod + "&series_type=open&apikey=XOL29ZT3Y55LY04P")
+        .then(response => {
+            if (response.ok) {
+                response.json().then(function(data) {
+                    let techAnalysis = data['Technical Analysis: ' + techIndicator];
+                    // put the items in an array
+                    let techAnalysisArr = [];
+                    $(techAnalysis).each(function(index, date) {
+                        techAnalysisArr.push(index, date);
+                    });
+                    console.log(techAnalysisArr);
+                });
+            }
+        });
+};
+
+// function to create the chart
+JSC.Chart('chartDiv', {
+    type: 'horizontal column',
+   series: [
+      {
+         points: [
+            {x: 'Apples', y: 50},
+            {x: 'Oranges', y: 42}
+         ]
+      }
+   ]
+});
 
 //quoteData();
 tickerFormEl.addEventListener('submit', submitButtonHandler);

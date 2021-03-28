@@ -8,3 +8,7 @@ header {
 li {
     list-style: none;
 }
+
+.sector {
+    margin-left: 25px;
+}
