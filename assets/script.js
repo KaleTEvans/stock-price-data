@@ -14,11 +14,18 @@ Purpose is to predict stock movement based on several factors
 6. Collect price data for each top ranked mover over a period of time to determine prediction outcome
 
 */
+var stockTicker;
 
 let priceData = [];
 let volumeData = [];
 let otherData = [];
 let previousDayData = [];
+
+// initial chart selections
+let techIndicator = 'SMA';
+let interval = 'weekly';
+let timePeriod = '10';
+let seriesType = 'open';
 
 let tickerFormEl = document.querySelector('#stock-ticker');
 let tickerInput = document.querySelector('#ticker');
@@ -29,12 +36,13 @@ let otherDataEl = document.querySelector('#other-data');
 let pastDataEl = document.querySelector('#past-data');
 
 let cardHeaderEl = document.querySelector('.card-header');
+const chartGenerateButtonEl = document.getElementById('tech-charts');
 
 
 let submitButtonHandler = function(event) {
     event.preventDefault();
 
-    let stockTicker = tickerInput.value.trim();
+    stockTicker = tickerInput.value.trim();
 
     if (stockTicker) {
         yahooSummaryData(stockTicker);
@@ -233,11 +241,7 @@ let alphaVantageData = function(ticker) {
                 */
             });
             // run the techindicator function
-            // initial chart selections
-            let techIndicator = 'SMA';
-            let interval = 'weekly';
-            let timePeriod = '5';
-            technicalIndicators(ticker, techIndicator, interval, timePeriod);
+            technicalIndicators(ticker, techIndicator, interval, timePeriod, seriesType);
         }
     })
     .catch(err => {
@@ -246,20 +250,44 @@ let alphaVantageData = function(ticker) {
 
 };
 
+const technicalChartsButtonHandler = function(event) {
+    event.preventDefault();
+
+    $('#chartDiv').html('');
+
+    let indicatorSelection = document.getElementById('tech-indicator').value;
+    let intervalSelection = document.getElementById('time-interval').value;
+
+    technicalIndicators(stockTicker, indicatorSelection, intervalSelection, timePeriod, seriesType);
+};
+
 // gather data for the chart 
-const technicalIndicators = function(ticker, techIndicator, interval, timePeriod) {
+const technicalIndicators = function(ticker, techIndicator, interval, timePeriod, seriesType) {
     
     fetch("https://www.alphavantage.co/query?function=" + techIndicator + "&symbol=" + ticker + 
-        "&interval=" + interval + "&time_period=" + timePeriod + "&series_type=open&apikey=XOL29ZT3Y55LY04P")
+        "&interval=" + interval + "&time_period=" + timePeriod + "&series_type=" + seriesType + "&apikey=XOL29ZT3Y55LY04P")
         .then(response => {
             if (response.ok) {
                 response.json().then(function(data) {
+                    $("#tech-chart-title").html(data['Meta Data']['2: Indicator']);
                     let techAnalysis = data['Technical Analysis: ' + techIndicator];
+                    console.log(techAnalysis);
+
                     // put the items in an array
                     let techAnalysisArr = [];
-                    $(techAnalysis).each(function(index, date) {
-                        techAnalysisArr.push(index, date);
-                    });
+                    // loop over the object to put items in the array
+                    for (var x in techAnalysis) {
+                        // get price value
+                        let dataValue = parseFloat(techAnalysis[x][techIndicator]);
+                        // new array to store each date and price value
+                        let newArr = [];
+                        newArr.push(new Date(x));
+                        newArr.push(dataValue);
+                        //push to main array
+                        techAnalysisArr.push(newArr);
+                    }
+                    techAnalysisArr = techAnalysisArr.slice(0, 52);
+                    renderChart(techAnalysisArr);
                     console.log(techAnalysisArr);
                 });
             }
@@ -267,17 +295,28 @@ const technicalIndicators = function(ticker, techIndicator, interval, timePeriod
 };
 
 // function to create the chart
-JSC.Chart('chartDiv', {
-    type: 'horizontal column',
-   series: [
-      {
-         points: [
-            {x: 'Apples', y: 50},
-            {x: 'Oranges', y: 42}
-         ]
-      }
-   ]
-});
+function renderChart(data) {
+    JSC.Chart('chartDiv', {
+        debug: true,
+        type: 'line',
+        legend: {
+            template: '%icon %name',
+            position: 'inside top left'
+        },
+        defaultPoint_marker_type: 'none',
+        xAxis_crosshair_enabled: true,
+        yAxis_formatString: 'c',
+        series: [
+            {
+                name: 'Chart',
+                points: data
+            }
+        ]
+    });
+}
+
+//renderChart();
 
 //quoteData();
 tickerFormEl.addEventListener('submit', submitButtonHandler);
+chartGenerateButtonEl.addEventListener('click', technicalChartsButtonHandler);

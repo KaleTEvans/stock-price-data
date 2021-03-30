@@ -12,3 +12,11 @@ li {
 .sector {
     margin-left: 25px;
 }
+
+.chart-title {
+    text-align: center;
+}
+
+.drop-down-options {
+    width: 30%;
+}
