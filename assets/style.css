@@ -5,6 +5,12 @@ header {
     align-items: center;
 }
 
+.ticker-form {
+    display: flex;
+    justify-content: center;
+    margin-top: 25px;
+}
+
 li {
     list-style: none;
 }

@@ -14,6 +14,16 @@ Purpose is to predict stock movement based on several factors
 6. Collect price data for each top ranked mover over a period of time to determine prediction outcome
 
 */
+
+ /*
+                ************** NEXT ADDITIONS *****************
+                Volume at current time yesterday
+                Data from a week ago
+                Data from a month ago
+                Compare performance to sector performance
+                Create technical indicator charts
+                */
+
 var stockTicker;
 
 let priceData = [];
@@ -21,9 +31,11 @@ let volumeData = [];
 let otherData = [];
 let previousDayData = [];
 
+let dailyPriceArr = [];
+
 // initial chart selections
 let techIndicator = 'SMA';
-let interval = 'weekly';
+let interval = 'daily';
 let timePeriod = '10';
 let seriesType = 'open';
 
@@ -55,7 +67,7 @@ let yahooSummaryData = function(ticker) {
     fetch("https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-summary?symbol=" + ticker + "&region=US", {
         "method": "GET",
         "headers": {
-            "x-rapidapi-key": "0b97a795ecmsh27eb9b574dcfb7cp13cbdajsn4983672dc0aa",
+            "x-rapidapi-key": rapidApiKey,
             "x-rapidapi-host": "apidojo-yahoo-finance-v1.p.rapidapi.com"
         }
     })
@@ -199,7 +211,7 @@ let yahooSummaryData = function(ticker) {
 // alpha api key: XOL29ZT3Y55LY04P
 
 let alphaVantageData = function(ticker) {
-    fetch("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=" + ticker + "&apikey=XOL29ZT3Y55LY04P")
+    fetch("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=" + ticker + "&apikey=" + alphaVantageKey)
     .then(response => {
         if (response.ok) {
             // get yesterdays date
@@ -231,14 +243,18 @@ let alphaVantageData = function(ticker) {
                 yesterdayCloseEl.textContent = "Yesterday's Closing Price: " + previousDayData[0].yesterdayClose;
                 pastDataEl.appendChild(yesterdayCloseEl);
 
-                /*
-                ************** NEXT ADDITIONS *****************
-                Volume at current time yesterday
-                Data from a week ago
-                Data from a month ago
-                Compare performance to sector performance
-                Create technical indicator charts
-                */
+                // store the daily open values in an array
+                for (var x in dailyData) {
+                    // get price value
+                    let openPrice = parseFloat(dailyData[x]['1. open']);
+                    // new array to store data
+                    let priceArr = [];
+                    priceArr.push(new Date(x));
+                    priceArr.push(openPrice);
+                    // push to dailypricearr
+                    dailyPriceArr.push(priceArr);
+                }
+
             });
             // run the techindicator function
             technicalIndicators(ticker, techIndicator, interval, timePeriod, seriesType);
@@ -265,13 +281,13 @@ const technicalChartsButtonHandler = function(event) {
 const technicalIndicators = function(ticker, techIndicator, interval, timePeriod, seriesType) {
     
     fetch("https://www.alphavantage.co/query?function=" + techIndicator + "&symbol=" + ticker + 
-        "&interval=" + interval + "&time_period=" + timePeriod + "&series_type=" + seriesType + "&apikey=XOL29ZT3Y55LY04P")
+        "&interval=" + interval + "&time_period=" + timePeriod + "&series_type=" + seriesType + "&apikey=" + alphaVantageKey)
         .then(response => {
             if (response.ok) {
                 response.json().then(function(data) {
                     $("#tech-chart-title").html(data['Meta Data']['2: Indicator']);
                     let techAnalysis = data['Technical Analysis: ' + techIndicator];
-                    console.log(techAnalysis);
+                    //console.log(techAnalysis);
 
                     // put the items in an array
                     let techAnalysisArr = [];
@@ -286,16 +302,16 @@ const technicalIndicators = function(ticker, techIndicator, interval, timePeriod
                         //push to main array
                         techAnalysisArr.push(newArr);
                     }
-                    techAnalysisArr = techAnalysisArr.slice(0, 52);
-                    renderChart(techAnalysisArr);
-                    console.log(techAnalysisArr);
+                    techAnalysisArr = techAnalysisArr.slice(0, 100);
+                    renderChart(techAnalysisArr, dailyPriceArr);
+                    //console.log(techAnalysisArr);
                 });
             }
         });
 };
 
 // function to create the chart
-function renderChart(data) {
+function renderChart(data1, data2) {
     JSC.Chart('chartDiv', {
         debug: true,
         type: 'line',
@@ -308,8 +324,11 @@ function renderChart(data) {
         yAxis_formatString: 'c',
         series: [
             {
-                name: 'Chart',
-                points: data
+                name: 'Technical Indicator',
+                points: data1
+            }, {
+                name: 'Price at Open',
+                points: data2
             }
         ]
     });
