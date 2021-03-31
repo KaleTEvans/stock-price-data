@@ -32,6 +32,7 @@ let otherData = [];
 let previousDayData = [];
 
 let dailyPriceArr = [];
+let dailySentimentArr = [];
 
 // initial chart selections
 let techIndicator = 'SMA';
@@ -50,6 +51,125 @@ let pastDataEl = document.querySelector('#past-data');
 let cardHeaderEl = document.querySelector('.card-header');
 const chartGenerateButtonEl = document.getElementById('tech-charts');
 
+// gather the overall market sentiment for the day
+const generalMarketSentiment = function() {
+    fetch('https://stocknewsapi.com/api/v1/category?section=general&items=50&token=' + stockNewsApiKey)
+    .then(response => {
+        if (response.ok) {
+            response.json().then(function(data) {
+                // create sentiment variables
+                let sentimentPositive = 0;
+                let sentimentNegative = 0;
+                let sentimentNeutral = 0;
+                // loop over the articles to retrieve sentiment
+                for (let i=0; i < data.data.length; i++) {
+                    let generalSentiment = data.data[i].sentiment;
+                    // Add 1 for each sentiment type
+                    if (generalSentiment === 'Positive') {
+                        sentimentPositive++;
+                    }
+                    if (generalSentiment === 'Negative') {
+                        sentimentNegative++;
+                    }
+                    if (generalSentiment === 'Neutral') {
+                        sentimentNeutral++;
+                    }
+                }
+                // now create the html element
+                let genSentimentValue = document.getElementById('gen-sent-value');
+                if (sentimentNeutral > sentimentPositive + sentimentNegative) {
+                    genSentimentValue.textContent = 'Neutral';
+                    genSentimentValue.classList = 'neutral';
+                } 
+                if (sentimentPositive > sentimentNegative && sentimentPositive <= sentimentNeutral) {
+                    genSentimentValue.textContent = 'Slightly Positive';
+                    genSentimentValue.classList = 'slightly-positive';
+                }
+                if (sentimentPositive > sentimentNegative && sentimentPositive > sentimentNeutral) {
+                    genSentimentValue.textContent = 'Positive';
+                    genSentimentValue.classList = 'positive';
+                }
+                if (sentimentNegative > sentimentPositive && sentimentNegative <= sentimentNeutral) {
+                    genSentimentValue.textContent = 'Slightly Negative';
+                    genSentimentValue.classList = 'slightly-negative';
+                }
+                if (sentimentNegative > sentimentPositive && sentimentNegative > sentimentNeutral) {
+                    genSentimentValue.textContent = 'Negative';
+                    genSentimentValue.classList = 'negative';
+                }
+            });
+        }
+    });
+};
+
+// top sentiment could use this to create a sentiment chart
+let topSentimentData = function() {
+    fetch('https://stocknewsapi.com/api/v1/stat?&section=alltickers&date=last30days&token=' + stockNewsApiKey)
+    .then(response => {
+        if(response.ok) {
+            response.json().then(function(data) {
+                let dailySentiment = data['data'];
+                // store the daily open values in an array
+                for (var x in dailySentiment) {
+                    // get price value
+                    let sentimentValue = parseFloat(dailySentiment[x]['sentiment_score']);
+                    // new array to store data
+                    let sentimentArr = [];
+                    sentimentArr.push(new Date(x));
+                    sentimentArr.push(sentimentValue);
+                    // push to dailypricearr
+                    dailySentimentArr.push(sentimentArr);
+                }
+                sentimentChart(dailySentimentArr);
+            });
+        };
+    });
+};
+
+// function to create the chart
+function sentimentChart(sentiment) {
+    JSC.Chart('chartDiv', {
+        debug: true,
+        type: 'line',
+        legend: {
+            template: '%icon %name',
+            position: 'inside top left'
+        },
+        defaultPoint_marker_type: 'none',
+        xAxis_crosshair_enabled: true,
+        series: [
+            {
+                name: 'Sentiment Score',
+                points: sentiment
+            }
+        ]
+    });
+};
+
+// top news mention api call
+let topNewsData = function() {
+    fetch('https://stocknewsapi.com/api/v1/top-mention?&date=last7days&token=' + stockNewsApiKey)
+    .then(response => {
+        if (response.ok) {
+            console.log(response);
+        }
+    });
+};
+
+// single stock news call
+let singleStockNews = function() {
+    let ticker = 'FB';
+    fetch('https://stocknewsapi.com/api/v1?tickers=' + ticker + '&items=50&token=' + stockNewsApiKey)
+    .then(response => {
+        if(response.ok) {
+            console.log(response);
+        }
+    })
+}
+//singleStockNews();
+topSentimentData();
+//topNewsData();
+
 
 let submitButtonHandler = function(event) {
     event.preventDefault();
@@ -61,7 +181,6 @@ let submitButtonHandler = function(event) {
     }
     
 }
-
 
 let yahooSummaryData = function(ticker) {
     fetch("https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-summary?symbol=" + ticker + "&region=US", {
@@ -334,8 +453,7 @@ function renderChart(data1, data2) {
     });
 }
 
-//renderChart();
+generalMarketSentiment();
 
-//quoteData();
 tickerFormEl.addEventListener('submit', submitButtonHandler);
 chartGenerateButtonEl.addEventListener('click', technicalChartsButtonHandler);

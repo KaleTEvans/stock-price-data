@@ -5,6 +5,10 @@ header {
     align-items: center;
 }
 
+.chart-box {
+    margin: 15px;
+}
+
 .ticker-form {
     display: flex;
     justify-content: center;
@@ -25,4 +29,27 @@ li {
 
 .drop-down-options {
     width: 30%;
+}
+
+.market-sentiment {
+    padding-bottom: 10px;
+}
+#gen-sent-value {
+    padding: 5px;
+    border-radius: 5px;
+}
+.neutral {
+    background-color: yellow;
+}
+.slightly-positive {
+    background-color: yellowgreen;
+}
+.positive {
+    background-color: green;
+}
+.slightly-negative {
+    background-color: rgb(173, 80, 42);
+}
+.negative {
+    background-color: red;
 }
