@@ -33,6 +33,7 @@ let previousDayData = [];
 
 let dailyPriceArr = [];
 let dailySentimentArr = [];
+let dailySPYArr = [];
 
 // initial chart selections
 let techIndicator = 'SMA';
@@ -120,15 +121,40 @@ let topSentimentData = function() {
                     // push to dailypricearr
                     dailySentimentArr.push(sentimentArr);
                 }
-                sentimentChart(dailySentimentArr);
             });
         };
     });
 };
 
+let spyData = function() {
+    fetch("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=SPY&apikey=" + alphaVantageKey)
+    .then(response => {
+        if (response.ok) {
+            response.json().then(function(data) {
+                
+                let dailySPYData = data['Time Series (Daily)'];
+                // store the daily open values in an array
+                for (var x in dailySPYData) {
+                    // get price value
+                    let openPrice = parseFloat(dailySPYData[x]['4. close']);
+                    // new array to store data
+                    let priceArr = [];
+                    priceArr.push(new Date(x));
+                    priceArr.push(openPrice);
+                    // push to dailypricearr
+                    dailySPYArr.push(priceArr);
+                }
+                dailySPYArr = dailySPYArr.slice(0, 20);
+                console.log(dailySPYArr);
+                sentimentChart(dailySentimentArr, dailySPYArr);
+            });
+        }
+    });
+};
+
 // function to create the chart
-function sentimentChart(sentiment) {
-    JSC.Chart('chartDiv', {
+function sentimentChart(sentiment, spyPrice) {
+    JSC.Chart('sentimentChartDiv', {
         debug: true,
         type: 'line',
         legend: {
@@ -137,38 +163,34 @@ function sentimentChart(sentiment) {
         },
         defaultPoint_marker_type: 'none',
         xAxis_crosshair_enabled: true,
+        yAxis: [
+            {
+                id: 'leftAxis',
+                label_text: 'Sentiment Score',
+            }, {
+                id: 'rightAxis',
+                label_text: 'Price Range',
+                formatString: 'c0',
+                orientation: 'right'
+            }
+        ],
         series: [
             {
                 name: 'Sentiment Score',
+                yAxis: 'leftAxis',
                 points: sentiment
+            }, {
+                name: 'Spy Movement',
+                yAxis: 'rightAxis',
+                points: spyPrice
             }
         ]
     });
 };
 
-// top news mention api call
-let topNewsData = function() {
-    fetch('https://stocknewsapi.com/api/v1/top-mention?&date=last7days&token=' + stockNewsApiKey)
-    .then(response => {
-        if (response.ok) {
-            console.log(response);
-        }
-    });
-};
-
-// single stock news call
-let singleStockNews = function() {
-    let ticker = 'FB';
-    fetch('https://stocknewsapi.com/api/v1?tickers=' + ticker + '&items=50&token=' + stockNewsApiKey)
-    .then(response => {
-        if(response.ok) {
-            console.log(response);
-        }
-    })
-}
-//singleStockNews();
 topSentimentData();
-//topNewsData();
+spyData();
+
 
 
 let submitButtonHandler = function(event) {
