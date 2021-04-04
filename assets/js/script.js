@@ -18,10 +18,11 @@ Purpose is to predict stock movement based on several factors
  /*
                 ************** NEXT ADDITIONS *****************
                 Volume at current time yesterday
-                Data from a week ago
-                Data from a month ago
+                Stock Price vs Sentiment Chart
+                Add stock price to top sentiment list
+                
                 Compare performance to sector performance
-                Create technical indicator charts
+                
                 */
 
 var stockTicker;
@@ -33,13 +34,15 @@ let previousDayData = [];
 
 let dailyPriceArr = [];
 let dailySentimentArr = [];
-let dailySPYArr = [];
+let dailyQQQArr = [];
 
 // initial chart selections
 let techIndicator = 'SMA';
 let interval = 'daily';
 let timePeriod = '10';
 let seriesType = 'open';
+
+const topSentimentEl = document.querySelector('.top-suggestions');
 
 let tickerFormEl = document.querySelector('#stock-ticker');
 let tickerInput = document.querySelector('#ticker');
@@ -126,34 +129,33 @@ let topSentimentData = function() {
     });
 };
 
-let spyData = function() {
-    fetch("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=SPY&apikey=" + alphaVantageKey)
+let qqqData = function() {
+    fetch("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=QQQ&apikey=" + alphaVantageKey)
     .then(response => {
         if (response.ok) {
             response.json().then(function(data) {
                 
-                let dailySPYData = data['Time Series (Daily)'];
+                let dailyQQQData = data['Time Series (Daily)'];
                 // store the daily open values in an array
-                for (var x in dailySPYData) {
+                for (var x in dailyQQQData) {
                     // get price value
-                    let openPrice = parseFloat(dailySPYData[x]['4. close']);
+                    let openPrice = parseFloat(dailyQQQData[x]['1. open']);
                     // new array to store data
                     let priceArr = [];
                     priceArr.push(new Date(x));
                     priceArr.push(openPrice);
                     // push to dailypricearr
-                    dailySPYArr.push(priceArr);
+                    dailyQQQArr.push(priceArr);
                 }
-                dailySPYArr = dailySPYArr.slice(0, 20);
-                console.log(dailySPYArr);
-                sentimentChart(dailySentimentArr, dailySPYArr);
+                dailyQQQArr = dailyQQQArr.slice(0, 21);
+                sentimentChart(dailySentimentArr, dailyQQQArr);
             });
         }
     });
 };
 
 // function to create the chart
-function sentimentChart(sentiment, spyPrice) {
+function sentimentChart(sentiment, qqqPrice) {
     JSC.Chart('sentimentChartDiv', {
         debug: true,
         type: 'line',
@@ -180,18 +182,37 @@ function sentimentChart(sentiment, spyPrice) {
                 yAxis: 'leftAxis',
                 points: sentiment
             }, {
-                name: 'Spy Movement',
+                name: 'QQQ Movement',
                 yAxis: 'rightAxis',
-                points: spyPrice
+                points: qqqPrice
             }
         ]
     });
 };
 
 topSentimentData();
-spyData();
+qqqData();
 
+// function to populate top sentiment cards
+let stockSuggestions = function(topMentions) {
+    for (let i=0; i <= 21; i++) {
+        // create cards for each item
+        let suggestionCard = document.createElement('li');
+        suggestionCard.classList = 'card top-suggested';
+        suggestionCard.setAttribute('id', topMentions[i].ticker);
+        suggestionCard.innerHTML = '<h6 class="ticker-header id="ticker-"' + i + ">" + topMentions[i].ticker + 
+            "</h6>" + '<p class="card-info" id="suggestion-"' + i + '>Score: ' +  topMentions[i].score.toFixed(2) + '</p>';
+        
+        topSentimentEl.appendChild(suggestionCard);
+    }
+}
 
+$('.top-suggestions').on('click', '.card', function() {
+    let stockEl = $(this).attr('id');
+    console.log(stockEl);
+    // pass the stock ticker to the summary function
+    yahooSummaryData(stockEl);
+});
 
 let submitButtonHandler = function(event) {
     event.preventDefault();
@@ -312,7 +333,7 @@ let yahooSummaryData = function(ticker) {
                 otherDataEl.appendChild(otherHeaderEl);
                 // percent insiders
                 let percentInsidersEl = document.createElement('li');
-                percentInsidersEl.textContent = 'Percent Float Held by Insiders: ' + (otherData[0].percentInsiders * 100);
+                percentInsidersEl.textContent = 'Percent Float Held by Insiders: ' + (otherData[0].percentInsiders * 100).toFixed(2);
                 otherDataEl.appendChild(percentInsidersEl);
                 // percent institutions
                 let percentInstitutionsEl = document.createElement('li');
@@ -357,6 +378,15 @@ let alphaVantageData = function(ticker) {
         if (response.ok) {
             // get yesterdays date
             let yesterdayDate = moment().subtract(1, 'days').format('YYYY-MM-DD');
+
+            let weekendDay = moment().format('dddd');
+            // set date to previous close if on a weekend
+            if (weekendDay === 'Sunday') {
+                yesterdayDate = moment().subtract(3, 'days').format('YYYY-MM-DD');
+            }
+            if (weekendDay === 'Monday') {
+                yesterdayDate = moment().subtract(4, 'days').format('YYYY-MM-DD');
+            }
 
             response.json().then(function(data) {
                 // past data header
