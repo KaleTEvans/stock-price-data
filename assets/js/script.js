@@ -20,7 +20,7 @@ Purpose is to predict stock movement based on several factors
                 Volume at current time yesterday
                 Stock Price vs Sentiment Chart
                 Add stock price to top sentiment list
-                
+
                 Compare performance to sector performance
                 
                 */
@@ -274,11 +274,11 @@ let yahooSummaryData = function(ticker) {
                 priceDataEl.appendChild(marketChangePercentEl);
                 // 50 day avg
                 let fiftyDayEl = document.createElement('li');
-                fiftyDayEl.textContent = 'Fifty Day Average: ' + priceData[0].fiftyDayAvg;
+                fiftyDayEl.textContent = 'Fifty Day Average: ' + priceData[0].fiftyDayAvg.toFixed(2);
                 priceDataEl.appendChild(fiftyDayEl);
                 // 200 day avg
                 let twoHdEl = document.createElement('li');
-                twoHdEl.textContent = 'Two Hundred Day Average: ' + priceData[0].twoHdDayAvg;
+                twoHdEl.textContent = 'Two Hundred Day Average: ' + priceData[0].twoHdDayAvg.toFixed(2);
                 priceDataEl.appendChild(twoHdEl);
                 // 52 wk high
                 let yearHighEl = document.createElement('li');
@@ -337,7 +337,7 @@ let yahooSummaryData = function(ticker) {
                 otherDataEl.appendChild(percentInsidersEl);
                 // percent institutions
                 let percentInstitutionsEl = document.createElement('li');
-                percentInstitutionsEl.textContent = "Percent Float Held by Instititions: " + (otherData[0].percentInstitutions * 100);
+                percentInstitutionsEl.textContent = "Percent Float Held by Instititions: " + (otherData[0].percentInstitutions * 100).toFixed(2);
                 otherDataEl.appendChild(percentInstitutionsEl);
                 // mean target price
                 let meanTargetEl = document.createElement('li');
@@ -378,14 +378,15 @@ let alphaVantageData = function(ticker) {
         if (response.ok) {
             // get yesterdays date
             let yesterdayDate = moment().subtract(1, 'days').format('YYYY-MM-DD');
-
+            console.log(yesterdayDate);
             let weekendDay = moment().format('dddd');
+            console.log(weekendDay);
             // set date to previous close if on a weekend
             if (weekendDay === 'Sunday') {
-                yesterdayDate = moment().subtract(3, 'days').format('YYYY-MM-DD');
+                yesterdayDate = moment().subtract(2, 'days').format('YYYY-MM-DD');
             }
             if (weekendDay === 'Monday') {
-                yesterdayDate = moment().subtract(4, 'days').format('YYYY-MM-DD');
+                yesterdayDate = moment().subtract(3, 'days').format('YYYY-MM-DD');
             }
 
             response.json().then(function(data) {
