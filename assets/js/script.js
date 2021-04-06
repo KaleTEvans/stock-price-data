@@ -25,6 +25,11 @@ Purpose is to predict stock movement based on several factors
                 
                 */
 
+// imports
+import {stockNewsApiKey} from '../js/config';
+import {alphaVantageKey} from '../js/config';
+import {rapidApiKey} from '../js/config';
+
 var stockTicker;
 
 let priceData = [];

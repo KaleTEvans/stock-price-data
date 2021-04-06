@@ -1,3 +1,8 @@
+// imports
+import {stockNewsApiKey} from '../js/config';
+import {alphaVantageKey} from '../js/config';
+import {rapidApiKey} from '../js/config';
+
 let weightedMentionsArr = [];
 
 let trendingTickersArr = [];
