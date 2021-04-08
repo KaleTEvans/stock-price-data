@@ -31,7 +31,11 @@ li {
 }
 
 .sector {
-    margin-left: 25px;
+    margin-left: 10px;
+}
+
+.card ul {
+    padding-left: 15px;
 }
 
 .chart-title {
